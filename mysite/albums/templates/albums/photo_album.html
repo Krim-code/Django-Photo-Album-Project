@@ -1,0 +1,21 @@
+{% extends 'albums/base.html' %}
+{% block title %}My Photo Album{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">My Photo Album</h1>
+<a href="{% url 'photo_upload' %}" class="bg-green-500 text-white py-2 px-4 mb-4 inline-block">Upload New Photo</a>
+<div class="grid grid-cols-3 gap-4">
+    {% for photo in photos %}
+    <div class="bg-white p-4 border border-gray-300">
+        <a data-fancybox="gallery" href="{{ photo.image.url }}">
+            <img src="{{ photo.image.url }}" class="w-full h-40 object-cover" alt="{{ photo.title }}">
+        </a>
+        <h2 class="text-lg font-semibold mt-2">{{ photo.title }}</h2>
+        <p class="text-sm">{{ photo.description }}</p>
+        <form method="POST" action="{% url 'photo_delete' photo.pk %}" class="mt-2">
+            {% csrf_token %}
+            <button type="submit" class="text-red-500">Delete</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

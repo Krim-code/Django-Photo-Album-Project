@@ -1,0 +1,27 @@
+{% extends 'albums/base.html' %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 border border-gray-300 rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold mb-6 text-center">Register</h1>
+    <form method="POST" action="">
+        {% csrf_token %}
+        <div class="mb-4">
+            {{ form.username.label_tag }}
+            {{ form.username }}
+        </div>
+        <div class="mb-4">
+            {{ form.email.label_tag }}
+            {{ form.email }}
+        </div>
+        <div class="mb-4">
+            {{ form.password1.label_tag }}
+            {{ form.password1 }}
+        </div>
+        <div class="mb-4">
+            {{ form.password2.label_tag }}
+            {{ form.password2 }}
+        </div>
+        <button type="submit" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Register</button>
+    </form>
+</div>
+{% endblock %}
