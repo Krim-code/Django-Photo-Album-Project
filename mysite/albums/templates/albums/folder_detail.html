@@ -1,16 +1,16 @@
 {% extends 'albums/base.html' %}
-{% block title %}My Photo Album{% endblock %}
+{% block title %}{{ folder.name }}{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto mt-6">
-    <h1 class="text-3xl font-bold mb-4">My Photo Album</h1>
+    <h1 class="text-3xl font-bold mb-4">{{ folder.name }}</h1>
     <div class="mb-4">
-        <a href="{% url 'folder_create' %}" class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600">Create Root Folder</a>
-        <a href="{% url 'photo_upload' %}" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Upload Photo to Root</a>
+        <a href="{% url 'folder_create_in_folder' folder.id %}" class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600">Create Subfolder</a>
+        <a href="{% url 'photo_upload_in_folder' folder.id %}" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Upload Photo</a>
     </div>
 
-    <h2 class="text-2xl font-semibold mb-4">Root Photos</h2>
+    <h2 class="text-2xl font-semibold mb-4">Photos in {{ folder.name }}</h2>
     <div class="grid grid-cols-3 gap-4 mb-6">
-        {% for photo in root_photos %}
+        {% for photo in photos %}
             <div class="border p-4 rounded shadow">
                 <a data-fancybox="gallery" href="{{ photo.image.url }}">
                     <img src="{{ photo.image.url }}" class="w-full h-32 object-cover rounded mb-2" alt="{{ photo.title }}">
@@ -24,25 +24,25 @@
         {% endfor %}
     </div>
 
-    <h2 class="text-2xl font-semibold mb-4">Folders</h2>
+    <h2 class="text-2xl font-semibold mb-4">Subfolders</h2>
     <div class="grid grid-cols-3 gap-4">
-        {% for folder in folders %}
+        {% for subfolder in subfolders %}
             <div class="border p-4 rounded shadow relative">
-                <a href="{% url 'folder_detail' folder.id %}" class="text-xl font-bold mb-2 block">{{ folder.name }}</a>
+                <a href="{% url 'folder_detail' subfolder.id %}" class="text-xl font-bold mb-2 block">{{ subfolder.name }}</a>
                 <!-- Кнопка с тремя точками -->
                 <div class="absolute top-2 right-2">
-                    <button onclick="toggleMenu('menu-{{ folder.id }}')" class="focus:outline-none action-button">
+                    <button onclick="toggleMenu('menu-{{ subfolder.id }}')" class="focus:outline-none action-button">
                         <svg class="h-6 w-6 text-gray-500 hover:text-gray-700" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 16.5c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm0-6c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2zm0-6c-1.105 0-2 .895-2 2s.895 2 2 2 2-.895 2-2-.895-2-2-2z"/>
                         </svg>
                     </button>
                     <!-- Скрытый список действий -->
-                    <div id="menu-{{ folder.id }}" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                    <div id="menu-{{ subfolder.id }}" class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                         <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="menu-button">
-                            <a href="{% url 'folder_create_in_folder' folder.id %}" class="text-gray-700 block px-4 py-2 text-sm">Add Subfolder</a>
-                            <a href="{% url 'photo_upload_in_folder' folder.id %}" class="text-gray-700 block px-4 py-2 text-sm">Upload Photo</a>
-                            <a href="{% url 'folder_rename' folder.id %}" class="text-gray-700 block px-4 py-2 text-sm">Rename</a>
-                            <form method="POST" action="{% url 'folder_delete' folder.id %}" class="w-full">
+                            <a href="{% url 'folder_create_in_folder' subfolder.id %}" class="text-gray-700 block px-4 py-2 text-sm">Add Subfolder</a>
+                            <a href="{% url 'photo_upload_in_folder' subfolder.id %}" class="text-gray-700 block px-4 py-2 text-sm">Upload Photo</a>
+                            <a href="{% url 'folder_rename' subfolder.id %}" class="text-gray-700 block px-4 py-2 text-sm">Rename</a>
+                            <form method="POST" action="{% url 'folder_delete' subfolder.id %}" class="w-full">
                                 {% csrf_token %}
                                 <button type="submit" class="w-full text-left text-gray-700 block px-4 py-2 text-sm">Delete</button>
                             </form>

@@ -1,0 +1,21 @@
+{% extends 'albums/base.html' %}
+{% block title %}{% if edit_mode %}Rename Folder{% else %}Create Folder{% endif %}{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 border border-gray-300 rounded-lg shadow-lg mt-6">
+    <h1 class="text-2xl font-bold mb-6 text-center">{% if edit_mode %}Rename Folder{% else %}Create Folder{% endif %}</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-4">
+            {{ form.name.label_tag }}
+            {{ form.name }}
+        </div>
+        {% if not edit_mode %}
+        <div class="mb-4">
+            {{ form.parent_folder.label_tag }}
+            {{ form.parent_folder }}
+        </div>
+        {% endif %}
+        <button type="submit" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">{% if edit_mode %}Rename{% else %}Create{% endif %}</button>
+    </form>
+</div>
+{% endblock %}

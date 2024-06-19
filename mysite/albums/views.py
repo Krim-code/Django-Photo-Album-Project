@@ -37,42 +37,80 @@ class LogoutView(View):
         logout(request)
         return redirect('login')
 
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
-from django.views.generic import ListView, CreateView, DeleteView
-from .models import Photo
-from django.urls import reverse_lazy
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Folder, Photo
+from .forms import FolderForm, PhotoForm
 
-@method_decorator(login_required, name='dispatch')
-class PhotoAlbumView(ListView):
-    model = Photo
-    template_name = 'albums/photo_album.html'
-    context_object_name = 'photos'
+class PhotoAlbumView(LoginRequiredMixin, View):
+    def get(self, request):
+        root_folders = Folder.objects.filter(user=request.user, parent_folder__isnull=True)
+        root_photos = Photo.objects.filter(user=request.user, folder__isnull=True)  # Фотографии в корне
+        return render(request, 'albums/photo_album.html', {'folders': root_folders, 'root_photos': root_photos})
 
-    def get_queryset(self):
-        return Photo.objects.filter(user=self.request.user)
 
-from django.core.exceptions import ValidationError
+class FolderDetailView(LoginRequiredMixin, View):
+    def get(self, request, folder_id):
+        folder = get_object_or_404(Folder, id=folder_id, user=request.user)
+        subfolders = folder.subfolders.all()
+        photos = folder.photos.all()
+        return render(request, 'albums/folder_detail.html', {'folder': folder, 'subfolders': subfolders, 'photos': photos})
 
-@method_decorator(login_required, name='dispatch')
-class PhotoUploadView(CreateView):
-    model = Photo
-    fields = ['image', 'title', 'description']
-    template_name = 'albums/photo_upload.html'
-    success_url = reverse_lazy('photo_album')
+class FolderCreateView(LoginRequiredMixin, View):
+    def get(self, request, parent_folder_id=None):
+        form = FolderForm()
+        return render(request, 'albums/folder_form.html', {'form': form, 'parent_folder_id': parent_folder_id})
 
-    def form_valid(self, form):
-        if Photo.objects.filter(user=self.request.user).count() >= 30:
-            form.add_error(None, "You can't upload more than 30 photos.")
-            return self.form_invalid(form)
-        form.instance.user = self.request.user
-        return super().form_valid(form)
+    def post(self, request, parent_folder_id=None):
+        form = FolderForm(request.POST)
+        if form.is_valid():
+            folder = form.save(commit=False)
+            folder.user = request.user
+            if parent_folder_id:
+                folder.parent_folder = get_object_or_404(Folder, id=parent_folder_id, user=request.user)
+            folder.save()
+            return redirect('folder_detail', folder_id=parent_folder_id) if parent_folder_id else redirect('photo_album')
+        return render(request, 'albums/folder_form.html', {'form': form})
 
-@method_decorator(login_required, name='dispatch')
-class PhotoDeleteView(DeleteView):
-    model = Photo
-    template_name = 'albums/photo_confirm_delete.html'
-    success_url = reverse_lazy('photo_album')
+class FolderRenameView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        folder = get_object_or_404(Folder, id=pk, user=request.user)
+        form = FolderForm(instance=folder)
+        return render(request, 'albums/folder_form.html', {'form': form, 'edit_mode': True})
 
-    def get_queryset(self):
-        return Photo.objects.filter(user=self.request.user)
+    def post(self, request, pk):
+        folder = get_object_or_404(Folder, id=pk, user=request.user)
+        form = FolderForm(request.POST, instance=folder)
+        if form.is_valid():
+            form.save()
+            return redirect('folder_detail', folder_id=folder.parent_folder.id) if folder.parent_folder else redirect('photo_album')
+        return render(request, 'albums/folder_form.html', {'form': form, 'edit_mode': True})
+
+class FolderDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        folder = get_object_or_404(Folder, id=pk, user=request.user)
+        parent_folder_id = folder.parent_folder.id if folder.parent_folder else None
+        folder.delete()
+        return redirect('folder_detail', folder_id=parent_folder_id) if parent_folder_id else redirect('photo_album')
+
+class PhotoUploadView(LoginRequiredMixin, View):
+    def get(self, request, folder_id=None):
+        form = PhotoForm()
+        return render(request, 'albums/photo_upload.html', {'form': form, 'folder_id': folder_id})
+
+    def post(self, request, folder_id=None):
+        form = PhotoForm(request.POST, request.FILES)
+        if form.is_valid():
+            photo = form.save(commit=False)
+            photo.user = request.user
+            if folder_id:
+                photo.folder = get_object_or_404(Folder, id=folder_id, user=request.user)
+            photo.save()
+            return redirect('folder_detail', folder_id=folder_id) if folder_id else redirect('photo_album')
+        return render(request, 'albums/photo_upload.html', {'form': form})
+class PhotoDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        photo = get_object_or_404(Photo, id=pk, user=request.user)
+        photo.delete()
+        return redirect('photo_album')
